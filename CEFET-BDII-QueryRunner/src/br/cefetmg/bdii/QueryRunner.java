@@ -1,5 +1,7 @@
 package br.cefetmg.bdii;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -157,12 +159,12 @@ public class QueryRunner {
 		}
 	}
 
-	public long getAverageExecutionTime(List<QueryRunnerResult> results) {
+	public BigDecimal getAverageExecutionTime(List<QueryRunnerResult> results) {
 		long time = 0;
 		for (QueryRunnerResult result : results) {
 			time += result.getExecutionTime();
 		}
-		return time / results.size();
+		return new BigDecimal(time / results.size()).divide(new BigDecimal(1000), 5, RoundingMode.HALF_UP);
 	}
 
 	public void printStatistics() {
@@ -173,7 +175,7 @@ public class QueryRunner {
 			System.out.println("Número de execuções: " + entry.getValue().size());
 			System.out.println("Número de linhas obtidas: "
 					+ (entry.getValue().isEmpty() ? 0 : entry.getValue().get(0).getRowCount()));
-			System.out.println("Tempo médio das execuções: " + getAverageExecutionTime(entry.getValue()));
+			System.out.println("Tempo médio das execuções: " + getAverageExecutionTime(entry.getValue()) + " segundos");
 			System.out.println("---------------------------------------------");
 		}
 	}
