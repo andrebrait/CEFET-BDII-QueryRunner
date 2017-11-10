@@ -117,8 +117,8 @@ public class QueryRunner {
 	}
 
 	public void disconnect() {
-		System.out.println("Desconectando do banco de dados");
 		if (this.con != null) {
+			System.out.println("Desconectando do banco de dados");
 			try {
 				this.con.close();
 			} catch (SQLException e) {
