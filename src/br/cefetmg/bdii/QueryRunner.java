@@ -15,8 +15,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+/**
+ * Classe QueryRunner.
+ * 
+ * Esta classe contém métodos auxiliares para executar abrir conexões, executar
+ * queries, imprimir resultados, gerar estatísticas e fechar conexões.
+ * 
+ * @author André Brait <andrebrait@gmail.com>
+ *
+ */
 public class QueryRunner {
 
+	/**
+	 * Classe QueryRunnerResult
+	 * 
+	 * Representa os resultados de uma execução de busca em banco de dados.
+	 * 
+	 * @author André Brait <andrebrait@gmail.com>
+	 *
+	 */
 	public static class QueryRunnerResult {
 		private final ResultSet rs;
 		private ResultSetMetaData rsmd;
@@ -49,22 +66,36 @@ public class QueryRunner {
 				List<String> lineValue = new ArrayList<String>(columnsNumber);
 				this.results.add(lineValue);
 				for (int i = 1; i <= columnsNumber; i++) {
-					lineValue.add(this.rs.getString(i));
+					lineValue.add(String.valueOf(this.rs.getString(i)));
 				}
 			}
 		}
 
 		private void printResults() throws SQLException {
 			int columnsNumber = this.rsmd.getColumnCount();
+			int[] maxLenArray = new int[columnsNumber - 1];
+			for (List<String> line : this.results) {
+				for (int i = 0; i < columnsNumber - 1; i++) {
+					maxLenArray[i] = Math.max(maxLenArray[i], line.get(i).length());
+				}
+			}
 			for (List<String> line : this.results) {
 				for (int i = 1; i <= columnsNumber; i++) {
 					if (i > 1) {
-						System.out.print(",  ");
+						System.out.print(";  " + getNSpaces(maxLenArray[i - 2] - line.get(i - 2).length()));
 					}
-					System.out.print(line.get(i) + " " + rsmd.getColumnName(i));
+					System.out.print(rsmd.getColumnName(i) + ": \"" + line.get(i - 1) + "\"");
 				}
 				System.out.println("");
 			}
+		}
+
+		private String getNSpaces(int n) {
+			StringBuilder sb = new StringBuilder(n);
+			for (int i = 0; i < n; i++) {
+				sb.append(" ");
+			}
+			return sb.toString();
 		}
 
 		private void discardResults() {
@@ -104,8 +135,8 @@ public class QueryRunner {
 	}
 
 	public void connect() {
-		System.out.println("Iniciando conexão ao banco de dados");
 		this.disconnect();
+		System.out.println("Iniciando conexão ao banco de dados");
 		try {
 			this.con = DriverManager.getConnection("jdbc:oracle:thin:@" + this.url + ":" + this.port + ":" + this.sid,
 					this.userName, this.password);
@@ -117,15 +148,17 @@ public class QueryRunner {
 	}
 
 	public void disconnect() {
-		if (this.con != null) {
-			System.out.println("Desconectando do banco de dados");
-			try {
-				this.con.close();
-			} catch (SQLException e) {
-				System.out.println("Erro ao fechar conexão anterior!");
-				e.printStackTrace();
-				return;
+		try {
+			if (this.con != null) {
+				System.out.println("Desconectando do banco de dados");
+				if (!this.con.isClosed()) {
+					this.con.close();
+				}
 			}
+		} catch (SQLException e) {
+			System.out.println("Erro ao fechar conexão!");
+			e.printStackTrace();
+			return;
 		}
 	}
 
