@@ -180,6 +180,7 @@ public class QueryRunner {
 				ResultSet rs = stmt.executeQuery(query);
 				QueryRunnerResult result = new QueryRunnerResult(rs);
 				result.fetchResults();
+				result.setExecutionTime(start, new Date());
 				if (results.isEmpty()) {
 					if (printMode) {
 						result.printResults();
@@ -187,7 +188,6 @@ public class QueryRunner {
 				} else {
 					result.discardResults();
 				}
-				result.setExecutionTime(start, new Date());
 				results.add(result);
 			}
 		} catch (SQLException e) {
