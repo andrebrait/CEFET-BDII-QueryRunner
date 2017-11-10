@@ -160,6 +160,9 @@ public class QueryRunner {
 	}
 
 	public BigDecimal getAverageExecutionTime(List<QueryRunnerResult> results) {
+		if (results == null || results.isEmpty()) {
+			return BigDecimal.ZERO;
+		}
 		long time = 0;
 		for (QueryRunnerResult result : results) {
 			time += result.getExecutionTime();
