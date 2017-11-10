@@ -93,6 +93,7 @@ public class QueryRunner {
 	 * @param printMode
 	 */
 	public QueryRunner(String userName, String password, String url, int port, String sid, boolean printMode) {
+		System.out.println("Instanciando QueryRunner para a url " + url + " na porta " + port);
 		this.userName = userName;
 		this.password = password;
 		this.url = url;
@@ -103,6 +104,7 @@ public class QueryRunner {
 	}
 
 	public void connect() {
+		System.out.println("Iniciando conexão ao banco de dados");
 		this.disconnect();
 		try {
 			this.con = DriverManager.getConnection("jdbc:oracle:thin:@" + this.url + ":" + this.port + ":" + this.sid,
@@ -115,6 +117,7 @@ public class QueryRunner {
 	}
 
 	public void disconnect() {
+		System.out.println("Desconectando do banco de dados");
 		if (this.con != null) {
 			try {
 				this.con.close();
@@ -127,6 +130,7 @@ public class QueryRunner {
 	}
 
 	public void runQuery(String query, int numExecutions) {
+		System.out.println("Executando a query (" + numExecutions + " vezes): " + query);
 		if (con == null) {
 			System.out.println("É necessário conectar-se ao banco antes de executar queries");
 			return;
