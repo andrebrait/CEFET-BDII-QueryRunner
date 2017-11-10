@@ -37,12 +37,12 @@ public class QueryRunner {
 	public static class QueryRunnerResult {
 		private final ResultSet rs;
 		private ResultSetMetaData rsmd;
-		private final List<List<String>> results;
+		private final List<String[]> results;
 		private long executionTime;
 
 		private QueryRunnerResult(ResultSet resultSet) {
 			this.rs = resultSet;
-			this.results = new ArrayList<List<String>>();
+			this.results = new ArrayList<String[]>();
 			this.executionTime = 0L;
 		}
 
@@ -63,10 +63,10 @@ public class QueryRunner {
 			this.rsmd = this.rs.getMetaData();
 			int columnsNumber = this.rsmd.getColumnCount();
 			while (this.rs.next()) {
-				List<String> lineValue = new ArrayList<String>(columnsNumber);
+				String[] lineValue = new String[columnsNumber];
 				this.results.add(lineValue);
 				for (int i = 1; i <= columnsNumber; i++) {
-					lineValue.add(String.valueOf(this.rs.getString(i)));
+					lineValue[i - 1] = String.valueOf(this.rs.getString(i));
 				}
 			}
 		}
@@ -74,17 +74,17 @@ public class QueryRunner {
 		private void printResults() throws SQLException {
 			int columnsNumber = this.rsmd.getColumnCount();
 			int[] maxLenArray = new int[columnsNumber - 1];
-			for (List<String> line : this.results) {
+			for (String[] line : this.results) {
 				for (int i = 0; i < columnsNumber - 1; i++) {
-					maxLenArray[i] = Math.max(maxLenArray[i], line.get(i).length());
+					maxLenArray[i] = Math.max(maxLenArray[i], line[i].length());
 				}
 			}
-			for (List<String> line : this.results) {
+			for (String[] line : this.results) {
 				for (int i = 1; i <= columnsNumber; i++) {
 					if (i > 1) {
-						System.out.print(";  " + getNSpaces(maxLenArray[i - 2] - line.get(i - 2).length()));
+						System.out.print(";  " + getNSpaces(maxLenArray[i - 2] - line[i - 2].length()));
 					}
-					System.out.print(rsmd.getColumnName(i) + ": \"" + line.get(i - 1) + "\"");
+					System.out.print(rsmd.getColumnName(i) + ": \"" + line[i - 1] + "\"");
 				}
 				System.out.println("");
 			}
@@ -99,8 +99,10 @@ public class QueryRunner {
 		}
 
 		private void discardResults() {
-			for (List<String> row : results) {
-				row.clear();
+			for (String[] row : results) {
+				for (int i = 0; i < row.length; i++) {
+					row[i] = null;
+				}
 			}
 		}
 	}
