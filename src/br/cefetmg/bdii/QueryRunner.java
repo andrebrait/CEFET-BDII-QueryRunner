@@ -39,6 +39,7 @@ public class QueryRunner {
 		private ResultSetMetaData rsmd;
 		private final List<String[]> results;
 		private long executionTime;
+		private Integer rowCount;
 
 		private QueryRunnerResult(ResultSet resultSet) {
 			this.rs = resultSet;
@@ -55,7 +56,10 @@ public class QueryRunner {
 		}
 
 		public int getRowCount() {
-			return results.size();
+			if (this.rowCount != null) {
+				return this.rowCount;
+			}
+			return this.results.size();
 		}
 
 		private void fetchResults() throws SQLException {
@@ -99,11 +103,8 @@ public class QueryRunner {
 		}
 
 		private void discardResults() {
-			for (String[] row : results) {
-				for (int i = 0; i < row.length; i++) {
-					row[i] = null;
-				}
-			}
+			this.rowCount = this.results.size();
+			this.results.clear();
 		}
 	}
 
@@ -165,6 +166,10 @@ public class QueryRunner {
 	}
 
 	public void runQuery(String query, int numExecutions) {
+		runQuery(query, numExecutions, 10000);
+	}
+
+	public void runQuery(String query, int numExecutions, int fetchSize) {
 		System.out.println("Executando a query (" + numExecutions + " vezes): " + query);
 		if (con == null) {
 			System.out.println("É necessário conectar-se ao banco antes de executar queries");
@@ -179,6 +184,7 @@ public class QueryRunner {
 			for (int i = 0; i < numExecutions; i++) {
 				Date start = new Date();
 				Statement stmt = con.createStatement();
+				stmt.setFetchSize(fetchSize);
 				ResultSet rs = stmt.executeQuery(query);
 				QueryRunnerResult result = new QueryRunnerResult(rs);
 				result.fetchResults();
