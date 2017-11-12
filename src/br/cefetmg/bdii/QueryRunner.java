@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,8 @@ import java.util.Map.Entry;
  *
  */
 public class QueryRunner {
+
+	public static final int DEFAULT_FETCH_SIZE = 1000;
 
 	/**
 	 * Classe QueryRunnerResult
@@ -109,6 +112,7 @@ public class QueryRunner {
 	}
 
 	private final Map<String, List<QueryRunnerResult>> resultMap;
+	private final Map<String, Integer> fetchSizes;
 
 	private final String userName, password, url, sid;
 	private final int port;
@@ -134,7 +138,8 @@ public class QueryRunner {
 		this.port = port;
 		this.sid = sid;
 		this.printMode = printMode;
-		this.resultMap = new LinkedHashMap<String, List<QueryRunnerResult>>();
+		this.resultMap = new LinkedHashMap<>();
+		this.fetchSizes = new HashMap<>();
 	}
 
 	public void connect() {
@@ -165,13 +170,52 @@ public class QueryRunner {
 		}
 	}
 
+	private int getFetchSize(String query) {
+		if (this.fetchSizes.containsKey(query)) {
+			return this.fetchSizes.get(query);
+		}
+		if (this.con == null) {
+			return DEFAULT_FETCH_SIZE;
+		}
+		try {
+			Statement stmt = con.createStatement();
+			ResultSet rs = stmt.executeQuery("select count(1) from (" + query + ")");
+			rs.setFetchSize(1);
+			int fetchSize = DEFAULT_FETCH_SIZE;
+			if (rs.next()) {
+				fetchSize = rs.getInt(1);
+			}
+			if (fetchSize <= 0) {
+				fetchSize = 1;
+			}
+			this.fetchSizes.put(query, fetchSize);
+			return fetchSize;
+		} catch (SQLException e) {
+			try {
+				Statement stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+				ResultSet rs = stmt.executeQuery(query);
+				int fetchSize = DEFAULT_FETCH_SIZE;
+				if (rs.last()) {
+					fetchSize = rs.getRow();
+				}
+				if (fetchSize <= 0) {
+					fetchSize = 1;
+				}
+				this.fetchSizes.put(query, fetchSize);
+				return fetchSize;
+			} catch (SQLException ex) {
+				return DEFAULT_FETCH_SIZE;
+			}
+		}
+	}
+
 	public void runQuery(String query, int numExecutions) {
-		runQuery(query, numExecutions, 10000);
+		this.runQuery(query, numExecutions, this.getFetchSize(query));
 	}
 
 	public void runQuery(String query, int numExecutions, int fetchSize) {
 		System.out.println("Executando a query (" + numExecutions + " vezes): " + query);
-		if (con == null) {
+		if (this.con == null) {
 			System.out.println("É necessário conectar-se ao banco antes de executar queries");
 			return;
 		}
@@ -199,7 +243,7 @@ public class QueryRunner {
 				results.add(result);
 			}
 		} catch (SQLException e) {
-			System.out.println("Erro ao executar query!");
+			System.out.println("Erro ao executar query! Query: " + query);
 			e.printStackTrace();
 		}
 	}
