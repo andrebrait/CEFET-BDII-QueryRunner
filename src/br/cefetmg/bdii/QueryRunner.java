@@ -90,7 +90,7 @@ public class QueryRunner {
 			for (String[] line : this.results) {
 				for (int i = 1; i <= columnsNumber; i++) {
 					if (i > 1) {
-						System.out.print(";  " + getNSpaces(maxLenArray[i - 2] - line[i - 2].length()));
+						System.out.print(";  " + this.getNSpaces(maxLenArray[i - 2] - line[i - 2].length()));
 					}
 					System.out.print(rsmd.getColumnName(i) + ": \"" + line[i - 1] + "\"");
 				}
