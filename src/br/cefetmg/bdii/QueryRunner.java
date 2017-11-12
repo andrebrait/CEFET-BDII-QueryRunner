@@ -27,7 +27,8 @@ import java.util.Map.Entry;
  */
 public class QueryRunner {
 
-	public static final int DEFAULT_FETCH_SIZE = 1000;
+	public static final int DEFAULT_FETCH_SIZE = 10000;
+	public static final int DEFAULT_NUM_EXECUTIONS = 10;
 
 	/**
 	 * Classe QueryRunnerResult
@@ -209,12 +210,42 @@ public class QueryRunner {
 		}
 	}
 
-	public void runQuery(String query, int numExecutions) {
-		this.runQuery(query, numExecutions, this.getFetchSize(query));
+	/**
+	 * Executa uma query N vezes, em que N é o número padrão de repetições nesta
+	 * classe.
+	 * 
+	 * @param query
+	 *            A query a ser executada (sem o ponto-e-vírgula final)
+	 */
+	public void runQuery(String query) {
+		this.runQuery(query, DEFAULT_NUM_EXECUTIONS);
 	}
 
+	/**
+	 * Executa uma query um determinado número de vezes.
+	 * 
+	 * @param query
+	 *            A query a ser executada (sem o ponto-e-vírgula final)
+	 * @param numExecutions
+	 *            O número de execuções a ser realizado.
+	 */
+	public void runQuery(String query, int numExecutions) {
+		this.runQuery(query, numExecutions, getFetchSize(query));
+	}
+
+	/**
+	 * Executa uma query um determinado número de vezes, especificando o número de
+	 * linhas a ser trazido do banco por transmissão.
+	 * 
+	 * @param query
+	 *            A query a ser executada (sem o ponto-e-vírgula final)
+	 * @param numExecutions
+	 *            O número de execuções a ser realizado.
+	 * @param fetchSize
+	 *            O número de linhas a ser trazido a cada ida ao banco.
+	 */
 	public void runQuery(String query, int numExecutions, int fetchSize) {
-		System.out.println("Executando a query (" + numExecutions + " vezes): " + query);
+		System.out.println("Executando a query (" + numExecutions + " vezes, fetchSize " + fetchSize + "): " + query);
 		if (this.con == null) {
 			System.out.println("É necessário conectar-se ao banco antes de executar queries");
 			return;
@@ -250,7 +281,7 @@ public class QueryRunner {
 
 	public BigDecimal getAverageExecutionTime(List<QueryRunnerResult> results) {
 		if (results == null || results.isEmpty()) {
-			return BigDecimal.ZERO;
+			return BigDecimal.ZERO.setScale(5);
 		}
 		long time = 0;
 		for (QueryRunnerResult result : results) {
