@@ -35,9 +35,9 @@ public class Main {
 			// Tentando estabelecer conexão com o banco
 			qr.connect();
 
-			// TODO Rodar suas queries abaixo, com o número de repetições desejado
-			qr.runQuery("select 1 from dual", 10); // Exemplo de query
-			qr.runQuery("select count(1) from dual", 10); // Exemplo de query
+			// TODO Rodar suas queries abaixo. O número padrão de repetições é 10
+			qr.runQuery("select 1 from dual"); // Exemplo de query
+			qr.runQuery("select count(1) from dual"); // Exemplo de query
 
 			// Exibir na saída padrão as estatísticas das consultas.
 			qr.printStatistics();
