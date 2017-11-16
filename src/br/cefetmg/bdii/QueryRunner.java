@@ -27,6 +27,8 @@ import java.util.Map.Entry;
  */
 public class QueryRunner {
 
+	private static final BigDecimal THOUSAND = new BigDecimal(1000);
+	
 	public static final int DEFAULT_FETCH_SIZE = 10000;
 	public static final int DEFAULT_NUM_EXECUTIONS = 10;
 
@@ -287,7 +289,7 @@ public class QueryRunner {
 		for (QueryRunnerResult result : results) {
 			time += result.getExecutionTime();
 		}
-		return new BigDecimal(time / results.size()).divide(new BigDecimal(1000), 5, RoundingMode.HALF_UP);
+		return new BigDecimal(time / results.size()).divide(THOUSAND, 5, RoundingMode.HALF_UP);
 	}
 
 	public BigDecimal getMinExecutionTime(List<QueryRunnerResult> results) {
@@ -298,7 +300,7 @@ public class QueryRunner {
 		for (QueryRunnerResult result : results) {
 			time = Math.min(time, result.getExecutionTime());
 		}
-		return new BigDecimal(time).divide(new BigDecimal(1000), 5, RoundingMode.HALF_UP);
+		return new BigDecimal(time).divide(THOUSAND, 5, RoundingMode.HALF_UP);
 	}
 
 	public BigDecimal getMaxExecutionTime(List<QueryRunnerResult> results) {
@@ -309,7 +311,7 @@ public class QueryRunner {
 		for (QueryRunnerResult result : results) {
 			time = Math.max(time, result.getExecutionTime());
 		}
-		return new BigDecimal(time).divide(new BigDecimal(1000), 5, RoundingMode.HALF_UP);
+		return new BigDecimal(time).divide(THOUSAND, 5, RoundingMode.HALF_UP);
 	}
 
 	public void printStatistics() {
