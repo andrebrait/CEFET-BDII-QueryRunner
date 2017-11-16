@@ -279,7 +279,7 @@ public class QueryRunner {
 		}
 	}
 
-	public BigDecimal getAverageExecutionTime(List<QueryRunnerResult> results) {
+	public BigDecimal getAvgExecutionTime(List<QueryRunnerResult> results) {
 		if (results == null || results.isEmpty()) {
 			return BigDecimal.ZERO.setScale(5);
 		}
@@ -290,6 +290,28 @@ public class QueryRunner {
 		return new BigDecimal(time / results.size()).divide(new BigDecimal(1000), 5, RoundingMode.HALF_UP);
 	}
 
+	public BigDecimal getMinExecutionTime(List<QueryRunnerResult> results) {
+		if (results == null || results.isEmpty()) {
+			return BigDecimal.ZERO.setScale(5);
+		}
+		long time = Long.MAX_VALUE;
+		for (QueryRunnerResult result : results) {
+			time = Math.min(time, result.getExecutionTime());
+		}
+		return new BigDecimal(time).divide(new BigDecimal(1000), 5, RoundingMode.HALF_UP);
+	}
+
+	public BigDecimal getMaxExecutionTime(List<QueryRunnerResult> results) {
+		if (results == null || results.isEmpty()) {
+			return BigDecimal.ZERO.setScale(5);
+		}
+		long time = Long.MIN_VALUE;
+		for (QueryRunnerResult result : results) {
+			time = Math.max(time, result.getExecutionTime());
+		}
+		return new BigDecimal(time).divide(new BigDecimal(1000), 5, RoundingMode.HALF_UP);
+	}
+
 	public void printStatistics() {
 		for (Entry<String, List<QueryRunnerResult>> entry : resultMap.entrySet()) {
 			System.out.println("");
@@ -298,7 +320,9 @@ public class QueryRunner {
 			System.out.println("Número de execuções: " + entry.getValue().size());
 			System.out.println("Número de linhas obtidas: "
 					+ (entry.getValue().isEmpty() ? 0 : entry.getValue().get(0).getRowCount()));
-			System.out.println("Tempo médio das execuções: " + getAverageExecutionTime(entry.getValue()) + " segundos");
+			System.out.println("Tempo mínimo das execuções: " + getMinExecutionTime(entry.getValue()) + " segundos");
+			System.out.println("Tempo médio das execuções: " + getAvgExecutionTime(entry.getValue()) + " segundos");
+			System.out.println("Tempo máximo das execuções: " + getMaxExecutionTime(entry.getValue()) + " segundos");
 			System.out.println("---------------------------------------------");
 		}
 	}
