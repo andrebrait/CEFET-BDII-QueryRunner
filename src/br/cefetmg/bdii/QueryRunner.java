@@ -116,7 +116,7 @@ public class QueryRunner {
 
 	private final String userName, password, url, sid;
 	private final int port;
-	private final boolean printResults;
+	private final boolean printMode;
 
 	private Connection con;
 
@@ -128,16 +128,16 @@ public class QueryRunner {
 	 * @param url
 	 * @param port
 	 * @param sid
-	 * @param printResults
+	 * @param printMode
 	 */
-	public QueryRunner(String userName, String password, String url, int port, String sid, boolean printResults) {
+	public QueryRunner(String userName, String password, String url, int port, String sid, boolean printMode) {
 		System.out.println("Instanciando QueryRunner para a url " + url + " na porta " + port);
 		this.userName = userName;
 		this.password = password;
 		this.url = url;
 		this.port = port;
 		this.sid = sid;
-		this.printResults = printResults;
+		this.printMode = printMode;
 		this.resultMap = new LinkedHashMap<>();
 		this.fetchSizes = new HashMap<>();
 	}
@@ -264,7 +264,7 @@ public class QueryRunner {
 				result.fetchResults();
 				result.setExecutionTime(start, new Date());
 				if (results.isEmpty()) {
-					if (printResults) {
+					if (this.printMode) {
 						result.printResults();
 					}
 				} else {
