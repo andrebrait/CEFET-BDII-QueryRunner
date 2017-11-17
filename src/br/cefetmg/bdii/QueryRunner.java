@@ -27,8 +27,13 @@ import java.util.Map.Entry;
  */
 public class QueryRunner {
 
-	private static final BigDecimal THOUSAND = new BigDecimal(1000);
-	
+	private static final int STANDARD_PRECISION = 3;
+	private static final int EXTENDED_PRECISION = 5;
+
+	private static final BigDecimal ZERO = BigDecimal.ZERO.setScale(STANDARD_PRECISION);
+	private static final BigDecimal TWO = new BigDecimal(2).setScale(STANDARD_PRECISION);
+	private static final BigDecimal THOUSAND = new BigDecimal(1000).setScale(STANDARD_PRECISION);
+
 	public static final int DEFAULT_FETCH_SIZE = 10000;
 	public static final int DEFAULT_NUM_EXECUTIONS = 10;
 
@@ -92,20 +97,12 @@ public class QueryRunner {
 			for (String[] line : this.results) {
 				for (int i = 1; i <= columnsNumber; i++) {
 					if (i > 1) {
-						System.out.print(";  " + this.getNSpaces(maxLenArray[i - 2] - line[i - 2].length()));
+						System.out.print(";  " + join(" ", "", maxLenArray[i - 2] - line[i - 2].length()));
 					}
 					System.out.print(rsmd.getColumnName(i) + ": \"" + line[i - 1] + "\"");
 				}
 				System.out.println("");
 			}
-		}
-
-		private String getNSpaces(int n) {
-			StringBuilder sb = new StringBuilder(n);
-			for (int i = 0; i < n; i++) {
-				sb.append(" ");
-			}
-			return sb.toString();
 		}
 
 		private void discardResults() {
@@ -119,7 +116,7 @@ public class QueryRunner {
 
 	private final String userName, password, url, sid;
 	private final int port;
-	private final boolean printMode;
+	private final boolean printResults;
 
 	private Connection con;
 
@@ -131,16 +128,16 @@ public class QueryRunner {
 	 * @param url
 	 * @param port
 	 * @param sid
-	 * @param printMode
+	 * @param printResults
 	 */
-	public QueryRunner(String userName, String password, String url, int port, String sid, boolean printMode) {
+	public QueryRunner(String userName, String password, String url, int port, String sid, boolean printResults) {
 		System.out.println("Instanciando QueryRunner para a url " + url + " na porta " + port);
 		this.userName = userName;
 		this.password = password;
 		this.url = url;
 		this.port = port;
 		this.sid = sid;
-		this.printMode = printMode;
+		this.printResults = printResults;
 		this.resultMap = new LinkedHashMap<>();
 		this.fetchSizes = new HashMap<>();
 	}
@@ -267,7 +264,7 @@ public class QueryRunner {
 				result.fetchResults();
 				result.setExecutionTime(start, new Date());
 				if (results.isEmpty()) {
-					if (printMode) {
+					if (printResults) {
 						result.printResults();
 					}
 				} else {
@@ -281,52 +278,122 @@ public class QueryRunner {
 		}
 	}
 
-	public BigDecimal getAvgExecutionTime(List<QueryRunnerResult> results) {
-		if (results == null || results.isEmpty()) {
-			return BigDecimal.ZERO.setScale(5);
-		}
-		long time = 0;
-		for (QueryRunnerResult result : results) {
-			time += result.getExecutionTime();
-		}
-		return new BigDecimal(time / results.size()).divide(THOUSAND, 5, RoundingMode.HALF_UP);
-	}
-
-	public BigDecimal getMinExecutionTime(List<QueryRunnerResult> results) {
-		if (results == null || results.isEmpty()) {
-			return BigDecimal.ZERO.setScale(5);
-		}
-		long time = Long.MAX_VALUE;
-		for (QueryRunnerResult result : results) {
-			time = Math.min(time, result.getExecutionTime());
-		}
-		return new BigDecimal(time).divide(THOUSAND, 5, RoundingMode.HALF_UP);
-	}
-
-	public BigDecimal getMaxExecutionTime(List<QueryRunnerResult> results) {
-		if (results == null || results.isEmpty()) {
-			return BigDecimal.ZERO.setScale(5);
-		}
-		long time = Long.MIN_VALUE;
-		for (QueryRunnerResult result : results) {
-			time = Math.max(time, result.getExecutionTime());
-		}
-		return new BigDecimal(time).divide(THOUSAND, 5, RoundingMode.HALF_UP);
-	}
-
 	public void printStatistics() {
 		for (Entry<String, List<QueryRunnerResult>> entry : resultMap.entrySet()) {
+			BigDecimal average = getAvgExecutionTime(entry.getValue());
+			BigDecimal variance = getVarianceExecutionTime(entry.getValue(), average);
+			BigDecimal stdDeviation = sqrt(variance, EXTENDED_PRECISION);
 			System.out.println("");
 			System.out.println("---------------------------------------------");
 			System.out.println("Query: " + entry.getKey());
 			System.out.println("Número de execuções: " + entry.getValue().size());
 			System.out.println("Número de linhas obtidas: "
 					+ (entry.getValue().isEmpty() ? 0 : entry.getValue().get(0).getRowCount()));
+			System.out.println("Tempos (segundos): " + getExecutionTimesString(entry.getValue()));
 			System.out.println("Tempo mínimo das execuções: " + getMinExecutionTime(entry.getValue()) + " segundos");
-			System.out.println("Tempo médio das execuções: " + getAvgExecutionTime(entry.getValue()) + " segundos");
+			System.out.println("Tempo médio das execuções: " + average + " segundos");
 			System.out.println("Tempo máximo das execuções: " + getMaxExecutionTime(entry.getValue()) + " segundos");
+			System.out.println("Variância: " + variance);
+			System.out.println("Desvio padrão: " + stdDeviation);
 			System.out.println("---------------------------------------------");
 		}
+	}
+
+	private static BigDecimal divideThousand(BigDecimal bdTime) {
+		return bdTime.divide(THOUSAND, STANDARD_PRECISION, RoundingMode.HALF_UP);
+	}
+
+	private static BigDecimal getAvgExecutionTime(List<QueryRunnerResult> results) {
+		if (results == null || results.isEmpty()) {
+			return ZERO;
+		}
+		long time = 0;
+		for (QueryRunnerResult result : results) {
+			time += result.getExecutionTime();
+		}
+		return divideThousand(new BigDecimal(time / results.size()));
+	}
+
+	private static BigDecimal getMinExecutionTime(List<QueryRunnerResult> results) {
+		if (results == null || results.isEmpty()) {
+			return ZERO;
+		}
+		long time = Long.MAX_VALUE;
+		for (QueryRunnerResult result : results) {
+			time = Math.min(time, result.getExecutionTime());
+		}
+		return divideThousand(new BigDecimal(time));
+	}
+
+	private static BigDecimal getMaxExecutionTime(List<QueryRunnerResult> results) {
+		if (results == null || results.isEmpty()) {
+			return ZERO;
+		}
+		long time = Long.MIN_VALUE;
+		for (QueryRunnerResult result : results) {
+			time = Math.max(time, result.getExecutionTime());
+		}
+		return divideThousand(new BigDecimal(time));
+	}
+
+	private static BigDecimal getVarianceExecutionTime(List<QueryRunnerResult> results, BigDecimal avg) {
+		if (results == null || results.size() <= 1) {
+			return ZERO;
+		}
+		BigDecimal var = BigDecimal.ZERO;
+		for (QueryRunnerResult result : results) {
+			var = var.add(divideThousand(new BigDecimal(result.getExecutionTime())).subtract(avg).pow(2));
+		}
+		return var.divide(new BigDecimal(results.size() - 1), EXTENDED_PRECISION, RoundingMode.HALF_UP);
+	}
+
+	public static BigDecimal sqrt(BigDecimal num, int scale) {
+		BigDecimal x0 = BigDecimal.ZERO;
+		BigDecimal x1 = new BigDecimal(Double.toString(Math.sqrt(num.doubleValue())));
+		while (x0.compareTo(x1) != 0) {
+			x0 = x1;
+			x1 = num.divide(x0, EXTENDED_PRECISION, RoundingMode.HALF_UP);
+			x1 = x1.add(x0);
+			x1 = x1.divide(TWO, EXTENDED_PRECISION, RoundingMode.HALF_UP);
+		}
+		return x1.setScale(scale, RoundingMode.HALF_UP);
+	}
+
+	private static String getExecutionTimesString(List<QueryRunnerResult> results) {
+		if (results == null || results.isEmpty()) {
+			return "";
+		}
+		String[] times = new String[results.size()];
+		int i = 0;
+		for (QueryRunnerResult result : results) {
+			times[i++] = divideThousand(new BigDecimal(result.getExecutionTime())).toString();
+		}
+		return join(times, ", ");
+	}
+
+	private static String join(String[] strings, String separator) {
+		if (strings == null || strings.length == 0) {
+			return "";
+		}
+		StringBuilder sb = new StringBuilder(strings.length);
+		for (int i = 0; i < strings.length; i++) {
+			sb.append(strings[i]);
+			if (i < strings.length - 1) {
+				sb.append(separator);
+			}
+		}
+		return sb.toString();
+	}
+
+	private static String join(String str, String separator, int n) {
+		if (n <= 0) {
+			return "";
+		}
+		String[] strings = new String[n];
+		for (int i = 0; i < strings.length; i++) {
+			strings[i] = str;
+		}
+		return join(strings, separator);
 	}
 
 }
