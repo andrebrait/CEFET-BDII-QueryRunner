@@ -35,6 +35,11 @@ public class Main {
 			// Tentando estabelecer conexão com o banco
 			qr.connect();
 
+			// TODO Exemplo de leitura de queries a partir de arquivo de texto
+			for (String query : QueryUtils.parse("sample_queries.sql")) {
+				qr.runQuery(query);
+			}
+
 			// TODO Rodar suas queries abaixo. O número padrão de repetições é 10
 			qr.runQuery("select 1 from dual"); // Exemplo de query
 			qr.runQuery("select count(1) from dual"); // Exemplo de query
